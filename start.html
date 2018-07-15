@@ -1,0 +1,78 @@
+<button onclick="startWs()">Click me</button>
+<button onclick="sendMsg()">send</button>
+
+<script>
+var connected = false;
+var connection;
+
+var context = new AudioContext();
+
+function startWs(){
+  connection = new WebSocket('ws://localhost:3000');
+  connection.binaryType = "arraybuffer";
+
+  connection.onopen = function () {
+    connected = true;
+  };
+
+    // Log messages from the server
+  connection.onmessage = function (e) {
+    if(e.data instanceof ArrayBuffer)
+    {
+      console.log('ServerLerer: ' + e.data);
+      console.log(e.data.byteLength);
+      var dv = new DataView(e.data);
+
+      audioRouting(e.data);
+    }
+    else{
+      console.log('ServerLerer: ' + e.data);
+    }
+
+  };
+}
+var nextTime = 0;
+function audioRouting(data) {
+  if (nextTime == 0)
+      nextTime = context.currentTime ;
+
+  context.decodeAudioData(data, function(buf) {
+          var source    = context.createBufferSource();
+          source.buffer = buf;
+          source.connect(context.destination);
+          source.start(nextTime);
+          nextTime += source.buffer.duration;
+  });
+  // var xd = new Int8Array(data);
+  // let blob = new getBlobFromWav(data);
+  //
+  // // read blob and send to audio
+  // var reader = new FileReader();
+  // reader.onloadend = function() {
+  //
+  // };
+  // reader.readAsArrayBuffer(blob);
+
+}
+
+// Wav -> blob
+function getBlobFromWav(wav) {
+    var srclist = [];
+    srclist.push(wav);
+    return new Blob(srclist, {type:'audio/wav'});
+}
+
+
+// Tell the Source when to play
+function playSound() {
+    source.start(context.currentTime); // play the source immediately
+}
+
+
+function sendMsg(){
+  if(connected){
+    connection.send("ass and tits");
+  }
+}
+
+</script>

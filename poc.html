@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+
+    <input type="text" id="wsaddr"></input>
+
+    <button onclick="connectws()">Connect</button>
+
+    <p id="dyntext"></p>
+    <div id="container" />
+
+    <script>
+        var connected = false;
+        var connection;
+        var context = new AudioContext();
+        var nextTime = 0;
+
+        function connectws() {
+            var x = document.getElementById("wsaddr");
+            startWs(x.value)
+
+        }
+
+        function startWs(wsaddr) {
+            var text = "Connecting to ";
+            text += wsaddr;
+            document.getElementById("dyntext").innerHTML = text;
+            wsurl = "ws://" + wsaddr;
+            connection = new WebSocket(wsurl);
+            connection.binaryType = "arraybuffer";
+
+            connection.onopen = function () {
+                connected = true;
+                var container = document.getElementById("container");
+                var input = document.createElement("input");
+                input.type = "text";
+                input.id = "dynmessage";
+                container.appendChild(input);
+                var button = document.createElement("button");
+                button.type = "button";
+                button.name = "message";
+                var t = document.createTextNode("send msg");
+                button.appendChild(t);
+                button.addEventListener("click", sendMsg, false);
+                container.appendChild(button);
+            };
+
+            // Log messages from the server
+            connection.onmessage = function (e) {
+                if (e.data instanceof ArrayBuffer) {
+                    console.log('ServerLerer: ' + e.data);
+                    var numElems = e.data.byteLength/2;
+                    console.log("num elems: " + numElems);
+                    var buffer16 = new DataView(e.data);
+                    //new mapping to 32 bit
+                    var buffer32 = new ArrayBuffer(numElems*4);
+
+                    var view = new DataView(buffer);
+
+                }
+                else {
+                    //console.log('ServerLerer: ' + e.data);
+                }
+
+            };
+        }
+
+        function sendMsg() {
+            if (connected) {
+                var x = document.getElementById("dynmessage");
+                console.log('send to ws : ' + x.value);
+                connection.send(x.value);
+            }
+        }
+    </script>
+
+</body>
+
+</html>
